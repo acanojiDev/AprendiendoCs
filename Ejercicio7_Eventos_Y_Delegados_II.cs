@@ -1,145 +1,364 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using static Ejercicio1.Program;
 
-namespace Ejercicio1
+// Ejercicio 1)
+
+public class ProduccionEventArgs : EventArgs
 {
-    internal class Program
+    public string NombreProducto { get; set; }
+    public TimeSpan TiempoProduccion { get; set; }
+}
+
+public class ProcesoProduccion
+{
+    public event EventHandler ProduccionCompletada;
+
+    public void IniciarProduccion(string nombreProducto, TimeSpan tiempoProduccion)
     {
-        // EventArgs personalizado para el evento de producción
-        public class ProduccionEventArgs : EventArgs
+        ProduccionEventArgs args = new ProduccionEventArgs
         {
-            public string NombreProducto { get; set; }
-            public int TiempoProduccion { get; set; }
+            NombreProducto = nombreProducto,
+            TiempoProduccion = tiempoProduccion
+        };
 
-            public ProduccionEventArgs(string nombreProducto, int tiempoProduccion)
-            {
-                NombreProducto = nombreProducto;
-                TiempoProduccion = tiempoProduccion;
-            }
-        }
+        ProduccionCompletada?.Invoke(this, args);
+    }
+}
 
-        // Clase principal que simula el proceso de producción
-        public class ProcesoProduccion
+public class ServicioNotificacion
+{
+    public void OnProduccionCompletada(object sender, EventArgs e)
+    {
+        ProduccionEventArgs args = e as ProduccionEventArgs;
+        Console.WriteLine($"Notificación: {args.NombreProducto} completado en {args.TiempoProduccion.TotalSeconds} segundos");
+    }
+}
+
+public class ServicioRegistroProduccion
+{
+    public void OnProduccionCompletada(object sender, EventArgs e)
+    {
+        ProduccionEventArgs args = e as ProduccionEventArgs;
+        Console.WriteLine($"Registro: {args.NombreProducto} - Tiempo: {args.TiempoProduccion.TotalSeconds}s");
+    }
+}
+
+// Ejercicio 2)
+
+public class TransmisionEventArgs : EventArgs
+{
+    public string TituloEvento { get; set; }
+    public TimeSpan Duracion { get; set; }
+}
+
+public class ControlTransmision
+{
+    public event EventHandler TransmisionFinalizada;
+
+    public void FinalizarTransmision(string titulo, TimeSpan duracion)
+    {
+        TransmisionEventArgs args = new TransmisionEventArgs
         {
-            // Declaración del evento
-            public event EventHandler<ProduccionEventArgs> ProduccionCompletada;
+            TituloEvento = titulo,
+            Duracion = duracion
+        };
 
-            // Método para iniciar la producción
-            public void IniciarProduccion(string nombreProducto, int tiempoProduccion)
-            {
-                // Simular el proceso de producción
-                Console.WriteLine($"Produciendo: {nombreProducto}");
+        TransmisionFinalizada?.Invoke(this, args);
+    }
+}
 
-                // Completar producción y disparar el evento
-                OnProduccionCompletada(new ProduccionEventArgs(nombreProducto, tiempoProduccion));
-            }
+public class ServicioNotificacionUsuario
+{
+    public void OnTransmisionFinalizada(object sender, EventArgs e)
+    {
+        TransmisionEventArgs args = e as TransmisionEventArgs;
+        Console.WriteLine($"Notificación Usuario: La transmisión '{args.TituloEvento}' finalizó");
+    }
+}
 
-            // Método protegido para disparar el evento
-            protected virtual void OnProduccionCompletada(ProduccionEventArgs e)
-            {
-                ProduccionCompletada?.Invoke(this, e);
-            }
-        }
+public class ServicioRegistroEventos
+{
+    public void OnTransmisionFinalizada(object sender, EventArgs e)
+    {
+        TransmisionEventArgs args = e as TransmisionEventArgs;
+        Console.WriteLine($"Registro Eventos: {args.TituloEvento} - Duración: {args.Duracion.TotalMinutes} minutos");
+    }
+}
 
-        // Servicio de notificación
-        public class ServicioNotificacion
+// Ejercicio 3)
+
+public class PedidoEventArgs : EventArgs
+{
+    public string NombreCliente { get; set; }
+    public List<string> DetallesArticulos { get; set; }
+}
+
+public class GestorPedidos
+{
+    public event EventHandler PedidoConfirmado;
+
+    public void ConfirmarPedido(string nombreCliente, List<string> articulos)
+    {
+        PedidoEventArgs args = new PedidoEventArgs
         {
-            public void SuscribirseAProduccion(ProcesoProduccion proceso)
-            {
-                proceso.ProduccionCompletada += EnviarNotificacion;
-            }
+            NombreCliente = nombreCliente,
+            DetallesArticulos = articulos
+        };
 
-            private void EnviarNotificacion(object sender, ProduccionEventArgs e)
-            {
-                Console.WriteLine($"Notificación: Producción completada de {e.NombreProducto} en {e.TiempoProduccion} minutos");
-            }
-        }
+        PedidoConfirmado?.Invoke(this, args);
+    }
+}
 
-        // Servicio de registro de producción
-        public class ServicioRegistroProduccion
+public class ServicioCocina
+{
+    public void OnPedidoConfirmado(object sender, EventArgs e)
+    {
+        PedidoEventArgs args = e as PedidoEventArgs;
+        Console.WriteLine($"Cocina: Preparando pedido para {args.NombreCliente}");
+    }
+}
+
+public class ServicioNotificacionCliente
+{
+    public void OnPedidoConfirmado(object sender, EventArgs e)
+    {
+        PedidoEventArgs args = e as PedidoEventArgs;
+        Console.WriteLine($"Notificación Cliente: {args.NombreCliente}, su pedido está confirmado");
+    }
+}
+
+// Ejercicio 4)
+
+public class StockEventArgs : EventArgs
+{
+    public string NombreProducto { get; set; }
+    public int NivelActual { get; set; }
+}
+
+public class ControlStock
+{
+    public event EventHandler StockBajo;
+
+    public void VerificarStock(string nombreProducto, int nivelActual, int minimoPermitido)
+    {
+        if (nivelActual < minimoPermitido)
         {
-            public void SuscribirseAProduccion(ProcesoProduccion proceso)
+            StockEventArgs args = new StockEventArgs
             {
-                proceso.ProduccionCompletada += GuardarRegistro;
-            }
+                NombreProducto = nombreProducto,
+                NivelActual = nivelActual
+            };
 
-            private void GuardarRegistro(object sender, ProduccionEventArgs e)
-            {
-                Console.WriteLine($"Registro guardado: {e.NombreProducto} - {e.TiempoProduccion} minutos");
-            }
-        }
-        static void Main(string[] args)
-        {
-             // Crear instancias
-             ProcesoProduccion proceso = new ProcesoProduccion();
-             ServicioNotificacion servicioNotificacion = new ServicioNotificacion();
-             ServicioRegistroProduccion servicioRegistro = new ServicioRegistroProduccion();
-
-             // Suscribir los servicios al evento
-             servicioNotificacion.SuscribirseAProduccion(proceso);
-             servicioRegistro.SuscribirseAProduccion(proceso);
-
-             // Iniciar producción
-             proceso.IniciarProduccion("Silla", 30);
-             proceso.IniciarProduccion("Mesa", 45);
+            StockBajo?.Invoke(this, args);
         }
     }
 }
 
-namespace Ejercicio2
+public class ServicioPedidoReposicion
 {
-    public class TransmisionEventArgs : EventArgs
+    public void OnStockBajo(object sender, EventArgs e)
     {
-        public string Titulo {  get; set; }
-        public double Duracion { get; set; }
-
-        public TransmisionEventArgs(string titulo, double duracion)
-        {
-            Titulo = titulo;
-            Duracion = duracion;
-        }
+        StockEventArgs args = e as StockEventArgs;
+        Console.WriteLine($"Reposición: Generando pedido para '{args.NombreProducto}'");
     }
+}
 
-    public class ControlTransmision
+public class ServicioAlertaStock
+{
+    public void OnStockBajo(object sender, EventArgs e)
     {
-        public event EventHandler<TransmisionEventArgs> TransmisionFinalizada;
-
-        public void FinalizarTransmision(string titulo, double duracion)
-        {
-            Console.WriteLine($"Finalizando la transmisión: {titulo}");
-            OnTransmisionCompletada(new TransmisionEventArgs(titulo, duracion));
-        }
-
-        protected virtual void OnTransmisionCompletada(TransmisionEventArgs e)
-        {
-            TransmisionFinalizada?.Invoke(this, e);
-        }
+        StockEventArgs args = e as StockEventArgs;
+        Console.WriteLine($"Alerta Stock: {args.NombreProducto} tiene nivel bajo: {args.NivelActual}");
     }
+}
 
-    public class ServicioNotificacionUsuario
+// Ejercicio 5)
+
+public class ReservaEventArgs : EventArgs
+{
+    public string NombreCliente { get; set; }
+    public string TipoHabitacion { get; set; }
+    public DateTime FechaEntrada { get; set; }
+    public DateTime FechaSalida { get; set; }
+}
+
+public class GestorReservas
+{
+    public event EventHandler ReservaConfirmada;
+
+    public void ConfirmarReserva(string nombreCliente, string tipoHabitacion, DateTime entrada, DateTime salida)
     {
-        public void SuscribirseANotificacion(ControlTransmision control)
+        ReservaEventArgs args = new ReservaEventArgs
         {
-            control.TransmisionFinalizada += EnviarNotificacion;
-        }
+            NombreCliente = nombreCliente,
+            TipoHabitacion = tipoHabitacion,
+            FechaEntrada = entrada,
+            FechaSalida = salida
+        };
 
-        private void EnviarNotificacion(object sender, TransmisionEventArgs e)
+        ReservaConfirmada?.Invoke(this, args);
+    }
+}
+
+public class ServicioLimpieza
+{
+    public void OnReservaConfirmada(object sender, EventArgs e)
+    {
+        ReservaEventArgs args = e as ReservaEventArgs;
+        Console.WriteLine($"Limpieza: Programada para {args.TipoHabitacion} el {args.FechaEntrada:yyyy-MM-dd}");
+    }
+}
+
+public class ServicioNotificacionReserva
+{
+    public void OnReservaConfirmada(object sender, EventArgs e)
+    {
+        ReservaEventArgs args = e as ReservaEventArgs;
+        Console.WriteLine($"Notificación: {args.NombreCliente}, reserva confirmada del {args.FechaEntrada:yyyy-MM-dd} al {args.FechaSalida:yyyy-MM-dd}");
+    }
+}
+
+// Ejercicio 6)
+
+public class Tecnico
+{
+    public string Nombre { get; set; }
+    public string Especialidad { get; set; }
+}
+
+public class IncidenciaEventArgs : EventArgs
+{
+    public int IdIncidencia { get; set; }
+    public string Cliente { get; set; }
+    public string Descripcion { get; set; }
+}
+
+public class GestorIncidencias
+{
+    public event EventHandler IncidenciaReportada;
+
+    public void ReportarIncidencia(int id, string cliente, string descripcion)
+    {
+        IncidenciaEventArgs args = new IncidenciaEventArgs
         {
-            Console.WriteLine($"Notificacion: Transmision de {e.Titulo} finaliza por {e.Duracion} ");
-        }
+            IdIncidencia = id,
+            Cliente = cliente,
+            Descripcion = descripcion
+        };
+
+        IncidenciaReportada?.Invoke(this, args);
     }
+}
 
-    public class ServicioRegistroEventos
+public class ServicioTecnico
+{
+    private Tecnico[] tecnicos = new Tecnico[]
     {
-        
+        new Tecnico { Nombre = "Carlos López", Especialidad = "Hardware" },
+        new Tecnico { Nombre = "María García", Especialidad = "Software" },
+        new Tecnico { Nombre = "Juan Martínez", Especialidad = "Red" }
+    };
+
+    private Random random = new Random();
+
+    public void OnIncidenciaReportada(object sender, EventArgs e)
+    {
+        IncidenciaEventArgs args = e as IncidenciaEventArgs;
+        Tecnico tecnico = tecnicos[random.Next(tecnicos.Length)];
+        Console.WriteLine($"Técnico: Incidencia #{args.IdIncidencia} asignada a {tecnico.Nombre}");
     }
+}
 
-    public static void Main()
+public class ServicioNotificacionClienteIncidencia
+{
+    public void OnIncidenciaReportada(object sender, EventArgs e)
     {
+        IncidenciaEventArgs args = e as IncidenciaEventArgs;
+        Console.WriteLine($"Notificación Cliente: {args.Cliente}, incidencia #{args.IdIncidencia} recibida");
+    }
+}
 
+public class ServicioRegistroIncidencias
+{
+    private List<string> baseDatos = new List<string>();
+
+    public void OnIncidenciaReportada(object sender, EventArgs e)
+    {
+        IncidenciaEventArgs args = e as IncidenciaEventArgs;
+        string registro = $"ID: {args.IdIncidencia} - Cliente: {args.Cliente} - Descripción: {args.Descripcion}";
+        baseDatos.Add(registro);
+        Console.WriteLine($"Registro: {registro}");
+    }
+}
+
+// Main 
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("=== Ejercicio 1 ===\n");
+        ProcesoProduccion proceso = new ProcesoProduccion();
+        ServicioNotificacion notificacion = new ServicioNotificacion();
+        ServicioRegistroProduccion registro = new ServicioRegistroProduccion();
+
+        proceso.ProduccionCompletada += notificacion.OnProduccionCompletada;
+        proceso.ProduccionCompletada += registro.OnProduccionCompletada;
+
+        proceso.IniciarProduccion("Widget A", TimeSpan.FromSeconds(5));
+
+        Console.WriteLine("\n=== Ejercicio 2 ===\n");
+        ControlTransmision transmision = new ControlTransmision();
+        ServicioNotificacionUsuario notifUsuario = new ServicioNotificacionUsuario();
+        ServicioRegistroEventos registroEventos = new ServicioRegistroEventos();
+
+        transmision.TransmisionFinalizada += notifUsuario.OnTransmisionFinalizada;
+        transmision.TransmisionFinalizada += registroEventos.OnTransmisionFinalizada;
+
+        transmision.FinalizarTransmision("Concierto Live", TimeSpan.FromMinutes(120));
+
+        Console.WriteLine("\n=== Ejercicio 3 ===\n");
+        GestorPedidos gestor = new GestorPedidos();
+        ServicioCocina cocina = new ServicioCocina();
+        ServicioNotificacionCliente notifCliente = new ServicioNotificacionCliente();
+
+        gestor.PedidoConfirmado += cocina.OnPedidoConfirmado;
+        gestor.PedidoConfirmado += notifCliente.OnPedidoConfirmado;
+
+        var articulos = new List<string> { "Pizza", "Refresco" };
+        gestor.ConfirmarPedido("José García", articulos);
+
+        Console.WriteLine("\n=== Ejercicio 4 ===\n");
+        ControlStock control = new ControlStock();
+        ServicioPedidoReposicion reposicion = new ServicioPedidoReposicion();
+        ServicioAlertaStock alerta = new ServicioAlertaStock();
+
+        control.StockBajo += reposicion.OnStockBajo;
+        control.StockBajo += alerta.OnStockBajo;
+
+        control.VerificarStock("Laptop", 3, 10);
+
+        Console.WriteLine("\n=== Ejercicio 5 ===\n");
+        GestorReservas gestorReservas = new GestorReservas();
+        ServicioLimpieza limpieza = new ServicioLimpieza();
+        ServicioNotificacionReserva notifReserva = new ServicioNotificacionReserva();
+
+        gestorReservas.ReservaConfirmada += limpieza.OnReservaConfirmada;
+        gestorReservas.ReservaConfirmada += notifReserva.OnReservaConfirmada;
+
+        gestorReservas.ConfirmarReserva("Ana Martínez", "Suite",
+            new DateTime(2025, 12, 15), new DateTime(2025, 12, 20));
+
+        Console.WriteLine("\n=== Ejercicio 6 ===\n");
+        GestorIncidencias gestorIncidencias = new GestorIncidencias();
+        ServicioTecnico servTecnico = new ServicioTecnico();
+        ServicioNotificacionClienteIncidencia notifIncidencia = new ServicioNotificacionClienteIncidencia();
+        ServicioRegistroIncidencias registroIncidencias = new ServicioRegistroIncidencias();
+
+        gestorIncidencias.IncidenciaReportada += servTecnico.OnIncidenciaReportada;
+        gestorIncidencias.IncidenciaReportada += notifIncidencia.OnIncidenciaReportada;
+        gestorIncidencias.IncidenciaReportada += registroIncidencias.OnIncidenciaReportada;
+
+        gestorIncidencias.ReportarIncidencia(1001, "Pedro López", "La impresora no funciona");
     }
 }
